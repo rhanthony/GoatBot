@@ -16,14 +16,14 @@ class IRC:
                 # defines the socket
                 print "connecting to:"+server
                 self.irc.connect((server, 6667))
-		self.irc.send("USER " + botnick + " * 8 :my IRC bot v0.1" + "n")
+		self.irc.send("USER " + botnick + " * 8 :OatTheGoat" + "n")
 		self.irc.send("NICK " + botnick + "n")
                 self.irc.send("JOIN " + channel + "n")
 
 
         def get_text(self):
                 # receive text from socket
-                text = self.irc.recv(2040)
+                text = self.irc.recv(512)
 
                 # respond to all pings
                 if 'PING' in text != -1:
