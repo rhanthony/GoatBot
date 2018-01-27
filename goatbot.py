@@ -16,5 +16,3 @@ while 1:
 	if "PRIVMSG" in text and channel in text and "snakes" in text:
 		irc.send(channel, "Hisssssssss")
 
-	if "PRIVMSG" in text and channel in text and "!opdad" in text:
-		irc.send(channel, "/mode +o DnetDad")
