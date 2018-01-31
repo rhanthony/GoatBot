@@ -1,13 +1,25 @@
 import socket
 import random
 
-# change these
-HOST = 'us.undernet.org'
+# Set version number
+# Major.Minor.DATE
+VERSION = '0.1.20170130'
+
+# IRC connection parameters
+HOST = 'amsterdam.nl.eu.undernet.org'
 PORT = 6667
-NICK = 'D-rex'
+NICK = 'Larry'
 CHAN = '#dashin'
+
+# Users allowed to send protected commands
 ADMIN = 'ElecMoHwk'
 
+# Start up in G mode
+# Modes are like movie ratings.
+# Available modes are:
+#    G - general
+#    R - a little rebellious
+MODE = 'G'
 
 # this is the function I will use when I want to send a message to the IRC server
 def send_line(irc:socket.socket, line:str):
@@ -18,6 +30,11 @@ def send_line(irc:socket.socket, line:str):
 
 # this is the function I will use when I want to process a message I received from the IRC server
 def handle_line(irc: socket.socket, line: bytes):
+
+    # Import globaal variables so we can change them
+    global MODE
+    global NICK
+
     # convert line from bytes to string, and remove leading and trailing whitespace
     line = line.decode().strip()
     print(f'<= {line}')
@@ -27,11 +44,11 @@ def handle_line(irc: socket.socket, line: bytes):
     # For showing elements of each line and their respective 'token' position
     # eventually this should show up with a -debug flag
     #
-    #for line in range(1):
-    #    total = len(tokens)
-    #    print(f'{total} elements found ... ')
-    #    for x in range(total):
-    #        print(f't{x}={tokens[x]}')
+    for line in range(1):
+        total = len(tokens)
+        print(f'{total} elements found ... ')
+        for t in range(total):
+            print(f'tokens{t}={tokens[x]}')
     #
     #
 
@@ -49,6 +66,17 @@ def handle_line(irc: socket.socket, line: bytes):
     #elif ( len(tokens) >=4 and tokens[2] == '{NICK}'):
     elif (tokens[1] == 'PRIVMSG' and tokens[2] == NICK):
 
+        if (tokens[3] == ':!status'):
+            print(f'COMMAND: Show status')
+            TARGET = ADMIN
+            send_line(irc, f'PRIVMSG {TARGET} :Status:  Alive and kickin\'')
+            send_line(irc, f'PRIVMSG {TARGET} :Version: {VERSION}')
+            send_line(irc, f'PRIVMSG {TARGET} :Owners:  {ADMIN}')
+            send_line(irc, f'PRIVMSG {TARGET} :Channel: {CHAN}')
+            send_line(irc, f'PRIVMSG {TARGET} :Mode:    {MODE}')
+
+
+	# Command and control triggers
         if (tokens[3] == ':!come'):
             print(f'COMMAND: Come home')
             send_line(irc, f'PRIVMSG {ADMIN} :Woof!')
@@ -59,14 +87,32 @@ def handle_line(irc: socket.socket, line: bytes):
             send_line(irc, f'PRIVMSG {ADMIN} :Going to my fort...')
             send_line(irc, f'PART {CHAN}')
 
-        # Add additional layer here to verify admin is issuing command for anything below
+        if (tokens[3] == ':!topic'):
+            topic = ' '.join(tokens[4:])
+            print(f'COMMAND: Topic change for: {CHAN}')
+            print(f'NEW TOPIC: {topic}')
+            send_line(irc, f'TOPIC {CHAN} :{topic}')
+
+        # Nickname change requires variable blackmagic...
+        if (tokens[3] == ':!changename'):
+            NICK = tokens[4]
+            print(f'COMMAND: Change nickname to {NICK}')
+            send_line(irc, f'NICK {NICK}')
+
+        # Set mode to G
+        if (tokens[3] == ':!gmode'):
+            send_line(irc, f'PRIVMSG {CHAN} :\x01ACTION takes a deep breath and composes himself...')
+            MODE = 'G'
+            print(f'COMMAND: Language limits! - Mode set to \'{MODE}\'')
+
+        # Set mode to R
+        if (tokens[3] == ':!rmode'):
+            send_line(irc, f'PRIVMSG {CHAN} :\x01ACTION is feeling rebellious...')
+            MODE = 'R'
+            print(f'COMMAND: Rebellious! - Mode set to \'{MODE}\'')
 
     # If the line is a full message from the channel we are in - respond to commands
     elif (tokens[1] == 'PRIVMSG' and tokens[2] == CHAN):
-
-        if (tokens[3] == ':!flirt'):
-            print(f'COMMAND: Flirt')
-            send_line(irc, f'PRIVMSG {tokens[4]} :I am flirting with you at someone\'s request...')
 
         if (tokens[3] == ':!joke'):
             print(f'COMMAND: Joke')
@@ -74,6 +120,10 @@ def handle_line(irc: socket.socket, line: bytes):
                 jokes = f.readlines()
                 joke = random.choice(jokes)
             send_line(irc, f'PRIVMSG {CHAN} :{joke}')
+
+        if (tokens[3] == ':!jump'):
+            print(f'COMMAND: Jump')
+            send_line(irc, f'PRIVMSG {CHAN} :\x01ACTION does jumping jacks!')
 
         # Add additional layer here to verify admin is issuing command for anything below
 
